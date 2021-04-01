@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遥控机器人</title>
+    <script src="//cdn.bootcss.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="http://cdn.staticfile.org/jquery/2.2.4/jquery.min.js"></script>
+</head>
+
+<body>
+    <div style="height: 100%;">   
+        <h1>当前延迟：0ms</h1>
+        <table align='center' style="margin-top: 50px; ">
+            <tr>
+                <td></td>
+                <td><button id='front' value="front" class="move">Forward</button></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button id='left' value="left" class="move">Left</button></td>
+                <td><button id='stop' value="stop" class="move">Stop</button></td>
+                <td><button id='right' value="right" class="move">Right</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button id='back' value="back" class="move">Back</button></button></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button id='camup' value="camup" class="cam">Camera Up</button></td>
+                <td></td>
+                <td><button id='camdown' value="camdown" class="cam">Camera Down</button></td>
+            </tr>
+            <tr>
+                <td><button id='campos1' value="campos1" class="campos">抬頭</button></td>
+                <td></td>
+                <td><button id='campos2' value="campos2" class="campos">看路</button></td>
+            </tr>
+            <tr>
+                <td><button id='robotpos1' value="robotpos1" class="robotpos">位置1</button></td>
+                <td></td>
+                <td><button id='robotpos2' value="robotpos2" class="robotpos">位置2</button></td>
+            </tr>
+        </table>
+        <div style="height:100px;">
+
+        </div>
+        <div  align='center' class = "footer">
+            <hr>
+            镇泰(中国)工业有限公司
+        </div>
+    </div>   
+</body>
+
+<style type="text/css">
+    body{
+        height: 100%;
+    }
+    .table{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin-top: -200px;
+    }
+    .move{
+         width: 100px;
+         height: 100px;
+    }
+    .cam{
+         width: 100px;
+         height: 100px;
+    }
+    .campos{
+         width: 100px;
+         height: 100px;
+    }
+    .robotpos{
+        width: 100px;
+        height: 100px;
+    }
+
+    .footer{
+        position:fixed;
+        bottom:0;width:98%;
+        /* height:-20px; */
+        background-color: #ffffff;
+    }
+    
+</style>
+<script>
+    window.onload = function(){
+        var timesend = setInterval(()=>{            
+            $.post("/delay",String(getTimeNow()),function(data,status){});         
+            var timerecv = setInterval(()=>{//开启定时
+                    var strCookie = document.cookie;
+                    var temp = strCookie.split("=");
+                    var time1 = getTimeNow()
+                    var time2 = temp[1];
+                    var delay = time1 - time2 - 1000;
+                    clearInterval(timerecv); 
+                    var h1= document.getElementsByTagName("h1")[0];
+                    if(delay < 2000)
+                        h1.innerHTML = "当前延迟："+delay+"ms";
+                    else
+                        h1.innerHTML = "断开连接";         
+                },50);     
+         },1000);        
+};
+</script>
+
+<script>
+    var timeOutEvent = 0;
+    var timeStart, timeEnd, time=0;
+    var timeInterval=500;//间隔时间
+    var touchflag = false;
+    var sendover = true;
+    var buttonclass;
+
+    // 获取此刻时间
+    function getTimeNow() {
+        return new Date().getTime();
+    }
+
+    // 鼠标按下时触发
+    $(function(){
+        $("button").mousedown(function(){
+            if($(this).attr('class') == "campos" || $(this).attr('class') == "robotpos")
+            {
+                $.post("/cmd",this.value,function(data,status){});    
+                return;
+            }
+            $.post("/cmd",this.value,function(data,status){});           	
+            sendover = false;
+            timeStart = getTimeNow();
+            time = setInterval(()=>{//开启定时
+                timeEnd = getTimeNow();
+                if (timeEnd - timeStart > timeInterval)
+                {
+                    timeStart = timeEnd;
+                    if(sendover == false)
+                        $.post("/cmd",this.value,function(data,status){});
+                }
+            },0); 
+        });
+    });
+
+    //鼠标离开时触发
+    $(function(){
+        $("button").mouseleave(function(){
+            if($(this).attr('class') == "")
+            {
+                return;
+            }
+            clearInterval(time);//清除定时
+            if(time != 0)
+            {
+                buttonclass = $(this).attr('class');
+                if(buttonclass == "move")              
+                    $.post("/cmd","stop",function(data,status){});
+                sendover = true;
+            }    
+            time = 0;
+        });
+    });
+    
+    //鼠标弹起时触发
+    $(function(){
+        $("button").mouseup(function(){
+            if($(this).attr('class') == "delay")
+            {           
+                return;
+            }
+            clearInterval(time);//清除定时
+            if(time != 0)
+            {
+                buttonclass = $(this).attr('class');
+                if(buttonclass == "move")              
+                    $.post("/cmd","stop",function(data,status){});
+                sendover = true;
+            }         
+            time = 0;
+        });
+    });
+
+    //触摸按下、松开时触发
+    $(function () {
+        $("button").on({
+            touchstart: function (e) {
+                e.preventDefault();
+                if(touchflag == true)
+                    return false;
+                sendover = false;
+                if($(this).attr('class') == "campos" || $(this).attr('class') == "robotpos")
+                {
+                    $.post("/cmd",this.value,function(data,status){});    
+                    return;
+                }
+                $.post("/cmd",this.value,function(data,status){}); 
+                timeStart = getTimeNow();
+                timeOutEvent = setInterval(()=>{
+                    timeEnd = getTimeNow();
+                    if (timeEnd - timeStart > timeInterval)
+                    {
+                        timeStart = timeEnd;
+                        if(sendover == false)
+                            $.post("/cmd",this.value,function(data,status){});
+                        touchflag = true;
+                    }
+                },0); 
+            },
+            touchend: function () {
+                clearTimeout(timeOutEvent);
+                if(timeOutEvent != 0)
+                {
+                    buttonclass = $(this).attr('class');
+                    if(buttonclass == "move")              
+                        $.post("/cmd","stop",function(data,status){});
+                    sendover = true;
+                }   
+                timeOutEvent = 0;
+                touchflag = false;
+                return false;
+            }
+        });
+    });
+</script>
+
+</html>

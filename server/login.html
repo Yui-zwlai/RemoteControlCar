@@ -1,0 +1,60 @@
+<!-- login.tpl（文件名） -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Login Page</title>
+  </head>
+  <body>
+<div id="container">
+    
+    <section class="main">
+        <h1 align='center'>登录</h1>
+        <table align='center' style="margin-top: 50px;">
+            <tr>
+                <td>
+                    <form method = 'post' action = './login'>
+                    Username:<input type = 'text' name = 'username'>
+                    <br />
+                    Password: <input type = 'password' name = 'password'>
+                    <br />
+                    <button>登录</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </section>
+    <footer>
+        <div  align='center' class='footer'>
+            <hr>
+            镇泰(中国)工业有限公司
+        </div>
+    </footer>
+</div>
+  </body>
+
+<style type="text/css">
+html,body{
+    height: 100%;
+}
+#container{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+header{
+    flex: 0 0 auto;
+}
+.main{
+    flex: 1 0 auto;
+}
+footer{
+    flex: 0 0 auto;
+}
+.footer{
+        position:absolute;
+        bottom:0;width:98%;
+        /* height:-20px; */
+        background-color: #ffffff;}
+</style>
+</html>
